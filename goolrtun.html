@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Studio Archivo - Espacio Colaborativo</title>
+    <!-- Tailwind CSS CDN para estilos rápidos y responsivos -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6; /* Un gris claro de fondo */
+            color: #374151; /* Color de texto principal */
+        }
+        .container {
+            max-width: 800px;
+        }
+        /* Estilos para el área de contenido compartido */
+        .content-item {
+            background-color: #ffffff;
+            border-radius: 0.5rem; /* Bordes redondeados */
+            padding: 1rem;
+            margin-bottom: 1rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        .content-item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.875rem; /* sm */
+            color: #6b7280; /* gris medio */
+        }
+        .content-item-body iframe {
+            width: 100%;
+            min-height: 200px; /* Altura mínima para iframes */
+            border: 1px solid #e5e7eb;
+            border-radius: 0.375rem;
+        }
+        .message-box {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background-color: #4CAF50; /* Green */
+            color: white;
+            padding: 15px;
+            border-radius: 5px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+            z-index: 1000;
+            display: none; /* Hidden by default */
+        }
+        .message-box.error {
+            background-color: #f44336; /* Red */
+        }
+        .message-box.show {
+            display: block;
+            animation: fadeInOut 3s forwards;
+        }
+        @keyframes fadeInOut {
+            0% { opacity: 0; transform: translateY(-20px); }
+            10% { opacity: 1; transform: translateY(0); }
+            90% { opacity: 1; transform: translateY(0); }
+            100% { opacity: 0; transform: translateY(-20px); }
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+    <div class="container mx-auto bg-white p-6 md:p-10 rounded-xl shadow-lg mt-8">
+        <h1 class="text-4xl md:text-5xl font-extrabold text-center text-blue-700 mb-6">Studio Archivo</h1>
+        <p class="text-center text-lg md:text-xl text-gray-600 mb-8">Tu espacio colaborativo para compartir todo tipo de contenido.</p>
+
+        <!-- Nueva sección de explicación para los padres -->
+        <div class="bg-blue-50 p-4 rounded-lg mb-6 border border-blue-200">
+            <h3 class="text-xl font-bold text-blue-800 mb-3">¡Hola, papá y mamá!</h3>
+            <p class="text-gray-700 leading-relaxed">
+                ¡Bienvenidos a "Studio Archivo"! Esta es una página especial donde podemos **compartir documentos, videos, enlaces y más, todos juntos y en tiempo real**. Imaginen que es un tablero donde vamos poniendo todo lo que queremos guardar y que todos vean al instante.
+            </p>
+            <p class="text-gray-700 leading-relaxed mt-2">
+                Para que todos estemos en el mismo "archivo", compartiremos un **"ID de Usuario"**. Es como un código secreto que nos asegura que estamos viendo y añadiendo al mismo lugar. Verán el ID de usuario más abajo; si estamos en el mismo ID, ¡estaremos conectados!
+            </p>
+            <p class="text-gray-700 leading-relaxed mt-2">
+                Simplemente escriban lo que quieran compartir en el cuadro de texto grande, elijan si es un **texto, un enlace o un video**, y hagan clic en "Añadir al Archivo". ¡Todo aparecerá aquí para que lo veamos juntos! Es muy sencillo, ¡verán qué fácil es!
+            </p>
+        </div>
+        <!-- Fin de la nueva sección -->
+
+        <div class="bg-gray-100 p-4 rounded-lg mb-6">
+            <p class="text-sm text-gray-500 mb-2">Tu ID de Usuario (compartan este ID para unirse al mismo servidor):</p>
+            <p id="userIdDisplay" class="font-mono text-base bg-white p-2 rounded break-all text-gray-800"></p>
+        </div>
+
+        <hr class="my-8 border-gray-300">
+
+        <h2 class="text-2xl font-bold text-gray-800 mb-4">Añadir Nuevo Contenido</h2>
+        <div class="flex flex-col gap-4 mb-8">
+            <textarea id="contentInput" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-gray-700" rows="5" placeholder="Escribe tu texto, pega un enlace de video (YouTube/Vimeo), un enlace a otra web, o código HTML..."></textarea>
+
+            <select id="contentType" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-gray-700">
+                <option value="text">Texto</option>
+                <option value="link">Enlace a Página Web</option>
+                <option value="video">Enlace de Video (YouTube/Vimeo)</option>
+                <option value="html_code">Código HTML</option>
+            </select>
+
+            <button id="addContentBtn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg transition duration-300 ease-in-out shadow-md">
+                Añadir al Archivo
+            </button>
+        </div>
+
+        <hr class="my-8 border-gray-300">
+
+        <h2 class="text-2xl font-bold text-gray-800 mb-4">Contenido Compartido</h2>
+        <div id="sharedContent" class="space-y-4">
+            <!-- El contenido compartido se cargará aquí -->
+            <p class="text-gray-500 text-center" id="loadingMessage">Cargando contenido...</p>
+        </div>
+    </div>
+
+    <!-- Message Box -->
+    <div id="messageBox" class="message-box"></div>
+
+    <script type="module">
+        // Importa las funciones necesarias de Firebase
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Variables globales proporcionadas por el entorno de Canvas
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+        // Inicializa Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+
+        let currentUserId = null;
+        let isAuthReady = false;
+
+        // Referencias a elementos del DOM
+        const userIdDisplay = document.getElementById('userIdDisplay');
+        const contentInput = document.getElementById('contentInput');
+        const contentTypeSelect = document.getElementById('contentType');
+        const addContentBtn = document.getElementById('addContentBtn');
+        const sharedContentDiv = document.getElementById('sharedContent');
+        const loadingMessage = document.getElementById('loadingMessage');
+        const messageBox = document.getElementById('messageBox');
+
+        /**
+         * Muestra un mensaje temporal en la pantalla.
+         * @param {string} message - El mensaje a mostrar.
+         * @param {boolean} isError - True si es un mensaje de error, false para éxito.
+         */
+        function showMessage(message, isError = false) {
+            messageBox.textContent = message;
+            messageBox.className = 'message-box show ' + (isError ? 'error' : '');
+            setTimeout(() => {
+                messageBox.className = 'message-box';
+            }, 3000); // El mensaje desaparece después de 3 segundos
+        }
+
+        /**
+         * Renderiza un elemento de contenido en el DOM.
+         * @param {Object} data - Los datos del documento de Firestore.
+         * @param {string} docId - El ID del documento de Firestore.
+         */
+        function renderContent(data, docId) {
+            let itemDiv = document.getElementById(`content-item-${docId}`);
+            if (!itemDiv) {
+                itemDiv = document.createElement('div');
+                itemDiv.id = `content-item-${docId}`;
+                itemDiv.className = 'content-item';
+                // Añadir al principio para que el contenido más nuevo esté arriba
+                sharedContentDiv.prepend(itemDiv);
+            }
+
+            // Crear o actualizar el encabezado del elemento
+            let headerDiv = itemDiv.querySelector('.content-item-header');
+            if (!headerDiv) {
+                headerDiv = document.createElement('div');
+                headerDiv.className = 'content-item-header';
+                itemDiv.appendChild(headerDiv);
+            }
+            const date = data.timestamp ? new Date(data.timestamp.toDate()).toLocaleString() : 'Fecha desconocida';
+            headerDiv.innerHTML = `
+                <span>Compartido por: <strong class="text-blue-600">${data.userId || 'Desconocido'}</strong></span>
+                <span>${date}</span>
+            `;
+
+            // Crear o actualizar el cuerpo del elemento
+            let bodyDiv = itemDiv.querySelector('.content-item-body');
+            if (!bodyDiv) {
+                bodyDiv = document.createElement('div');
+                bodyDiv.className = 'content-item-body mt-2 text-gray-700';
+                itemDiv.appendChild(bodyDiv);
+            }
+
+            bodyDiv.innerHTML = ''; // Limpiar contenido previo
+
+            switch (data.type) {
+                case 'text':
+                    const textContent = document.createElement('p');
+                    textContent.textContent = data.content;
+                    textContent.className = 'whitespace-pre-wrap'; // Preserva los saltos de línea
+                    bodyDiv.appendChild(textContent);
+                    break;
+                case 'link':
+                    const link = document.createElement('a');
+                    link.href = data.content;
+                    link.textContent = data.content;
+                    link.target = '_blank'; // Abre en una nueva pestaña
+                    link.rel = 'noopener noreferrer';
+                    link.className = 'text-blue-500 hover:underline break-all'; // Estilo para enlaces
+                    bodyDiv.appendChild(link);
+                    break;
+                case 'video':
+                    // Generar un iframe para YouTube o Vimeo
+                    let embedUrl = '';
+                    if (data.content.includes('youtube.com/watch?v=')) {
+                        const videoId = data.content.split('v=')[1]?.split('&')[0];
+                        embedUrl = `https://www.youtube.com/embed/${videoId}`;
+                    } else if (data.content.includes('youtu.be/')) {
+                        const videoId = data.content.split('youtu.be/')[1]?.split('?')[0];
+                        embedUrl = `https://www.youtube.com/embed/${videoId}`;
+                    } else if (data.content.includes('vimeo.com/')) {
+                        const videoId = data.content.split('vimeo.com/')[1]?.split('/')[0];
+                        embedUrl = `https://player.vimeo.com/video/${videoId}`;
+                    }
+
+                    if (embedUrl) {
+                        const iframe = document.createElement('iframe');
+                        iframe.src = embedUrl;
+                        iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture';
+                        iframe.allowFullscreen = true;
+                        iframe.frameBorder = '0';
+                        bodyDiv.appendChild(iframe);
+                    } else {
+                        const invalidVideoLink = document.createElement('p');
+                        invalidVideoLink.textContent = `Enlace de video no válido: ${data.content}`;
+                        invalidVideoLink.className = 'text-red-500';
+                        bodyDiv.appendChild(invalidVideoLink);
+                    }
+                    break;
+                case 'html_code':
+                    // Utiliza un iframe en sandbox para mostrar el código HTML de forma segura
+                    const iframe = document.createElement('iframe');
+                    // Restringe las capacidades del iframe para seguridad
+                    iframe.sandbox = 'allow-scripts allow-same-origin'; // Permite scripts y origen mismo, pero no acceso a la ventana principal
+                    iframe.srcdoc = data.content;
+                    bodyDiv.appendChild(iframe);
+                    break;
+            }
+        }
+
+        // Configuración de autenticación y listener de Firestore
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                currentUserId = user.uid;
+                userIdDisplay.textContent = currentUserId;
+                isAuthReady = true;
+                loadingMessage.remove(); // Quita el mensaje de carga una vez autenticado y listo para cargar datos
+                setupFirestoreListener(); // Inicia el listener de Firestore una vez que el usuario esté autenticado
+            } else {
+                // Si no hay token inicial, inicia sesión anónimamente
+                try {
+                    if (initialAuthToken) {
+                         await signInWithCustomToken(auth, initialAuthToken);
+                    } else {
+                        await signInAnonymously(auth);
+                    }
+                } catch (error) {
+                    console.error("Error al iniciar sesión:", error);
+                    showMessage(`Error al iniciar sesión: ${error.message}`, true);
+                    userIdDisplay.textContent = 'Error al cargar ID de usuario.';
+                }
+            }
+        });
+
+        /**
+         * Configura el listener de Firestore para actualizaciones en tiempo real.
+         */
+        function setupFirestoreListener() {
+            if (!isAuthReady) {
+                console.warn("Firestore listener no se inició: Autenticación no lista.");
+                return;
+            }
+
+            // Ruta de la colección de datos públicos para la aplicación
+            const publicDataCollectionRef = collection(db, `artifacts/${appId}/public/data/sharedContent`);
+            const q = query(publicDataCollectionRef, orderBy('timestamp', 'desc')); // Ordenar por fecha, los más recientes primero
+
+            onSnapshot(q, (snapshot) => {
+                snapshot.docChanges().forEach((change) => {
+                    const data = change.doc.data();
+                    const docId = change.doc.id;
+
+                    if (change.type === "added") {
+                        console.log("Nuevo contenido:", data);
+                        renderContent(data, docId);
+                    }
+                    if (change.type === "modified") {
+                        console.log("Contenido modificado:", data);
+                        // Re-renderizar el contenido modificado
+                        renderContent(data, docId);
+                    }
+                    if (change.type === "removed") {
+                        console.log("Contenido eliminado:", data);
+                        const itemToRemove = document.getElementById(`content-item-${docId}`);
+                        if (itemToRemove) {
+                            itemToRemove.remove();
+                        }
+                    }
+                });
+            }, (error) => {
+                console.error("Error al escuchar cambios en Firestore:", error);
+                showMessage(`Error de conexión: ${error.message}`, true);
+            });
+        }
+
+        // Event listener para el botón de añadir contenido
+        addContentBtn.addEventListener('click', async () => {
+            if (!isAuthReady) {
+                showMessage("Por favor, espera a que la aplicación cargue completamente.", true);
+                return;
+            }
+
+            const content = contentInput.value.trim();
+            const type = contentTypeSelect.value;
+
+            if (!content) {
+                showMessage("El contenido no puede estar vacío.", true);
+                return;
+            }
+
+            try {
+                // Añadir un nuevo documento a la colección
+                const publicDataCollectionRef = collection(db, `artifacts/${appId}/public/data/sharedContent`);
+                await addDoc(publicDataCollectionRef, {
+                    content: content,
+                    type: type,
+                    userId: currentUserId,
+                    timestamp: serverTimestamp() // Usa la marca de tiempo del servidor
+                });
+                contentInput.value = ''; // Limpiar el input
+                showMessage("Contenido añadido con éxito.");
+            } catch (error) {
+                console.error("Error al añadir documento:", error);
+                showMessage(`Error al añadir contenido: ${error.message}`, true);
+            }
+        });
+
+        // Asegúrate de que el listener de autenticación se ejecuta para inicializar la aplicación.
+        // La llamada a setupFirestoreListener() está dentro de onAuthStateChanged para asegurar que auth esté listo.
+
+    </script>
+</body>
+</html>
